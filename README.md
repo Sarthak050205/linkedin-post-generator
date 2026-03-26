@@ -1,16 +1,25 @@
-# React + Vite
+# LinkedIn Post Generator (AI)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based app that helps developers generate LinkedIn posts based on their learning and projects.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- AI-powered post generation
+- Generate up to 3 variations
+- Word length control (slider)
+- Tone selection (casual, professional, story)
+- History tracking with localStorage
+- Smart intent-based generation
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React (Vite)
+- Context API
+- Tailwind CSS
+- OpenRouter API (GPT)
 
-## Expanding the ESLint configuration
+## Future Improvements
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Dark mode
+- Feedback system
+- Smart series detection
