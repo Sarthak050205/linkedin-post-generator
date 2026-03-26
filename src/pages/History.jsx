@@ -1,60 +1,84 @@
-import { useContext } from "react";
-import EntryContext from "../context/EntryContext";
+import { useEffect, useState } from "react";
 
 function History() {
-  const { posts = [], setPosts } = useContext(EntryContext) || {};
+  const [posts, setPosts] = useState([]);
 
-  // 🗑 Delete post
+  // Load posts
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("posts")) || [];
+      setPosts(stored);
+    } catch (err) {
+      console.error("Error loading posts:", err);
+      setPosts([]);
+    }
+  }, []);
+
+  // Copy
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied!");
+  };
+
+  // Delete
   const handleDelete = (id) => {
     const updated = posts.filter((post) => post.id !== id);
     setPosts(updated);
-  };
-
-  // 📋 Copy post
-  const handleCopy = (content) => {
-    navigator.clipboard.writeText(content);
-    alert("Copied!");
+    localStorage.setItem("posts", JSON.stringify(updated));
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-gray-800">History</h2>
 
+      {/* HEADER */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow">
+        <h2 className="text-2xl font-semibold">History</h2>
+        <p className="text-gray-500 text-sm mt-1">
+          All your generated LinkedIn posts
+        </p>
+      </div>
+
+      {/* POSTS */}
       {posts.length === 0 ? (
-        <p className="text-gray-500">No posts yet. Start generating your first post 🚀</p>
-        
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow text-center text-gray-500">
+          No posts yet. Start generating 🚀
+        </div>
       ) : (
-        posts.map((post) => (
-          <div
-            key={post.id}
-            className="bg-white shadow-md rounded-lg p-4 "
-          >
-            {/* Date */}
-            <p className="text-sm text-gray-500">
-              {new Date(post.date).toLocaleString()}
-            </p>
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition"
+            >
+              <p className="whitespace-pre-line text-sm leading-relaxed">
+                {post.content}
+              </p>
 
-            {/* Content */}
-            <p className="whitespace-pre-line">{post.content}</p>
+              {/* Footer */}
+              <div className="flex justify-between items-center mt-4">
+                <span className="text-xs text-gray-500">
+                  {new Date(post.date).toLocaleString()}
+                </span>
 
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleCopy(post.content)}
-                className="bg-green-500 text-white px-3 py-1 rounded"
-              >
-                Copy
-              </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleCopy(post.content)}
+                    className="text-blue-600 text-sm hover:underline"
+                  >
+                    Copy
+                  </button>
 
-              <button
-                onClick={() => handleDelete(post.id)}
-                className="bg-red-500 text-white px-3 py-1 rounded"
-              >
-                Delete
-              </button>
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="text-red-500 text-sm hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   );

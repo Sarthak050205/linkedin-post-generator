@@ -1,30 +1,27 @@
-import { useState, useContext } from "react";
-import EntryContext from "../context/EntryContext";
+import { useState } from "react";
 import { generatePost } from "../utils/ai";
 
 function GeneratePost() {
-  const { posts, setPosts, globalIntent, setGlobalIntent } =
-    useContext(EntryContext);
-
   const [practice, setPractice] = useState("");
   const [learning, setLearning] = useState("");
   const [goal, setGoal] = useState("");
   const [intent, setIntent] = useState("");
-
   const [tone, setTone] = useState("casual");
-  const [count, setCount] = useState(1);
-
-  const [options, setOptions] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const [useHistory, setUseHistory] = useState(false);
   const [wordCount, setWordCount] = useState(120);
+  const [numPosts, setNumPosts] = useState(1);
+
+  const [loading, setLoading] = useState(false);
+  const [options, setOptions] = useState([]);
+  const [error, setError] = useState("");
+
+  // 🔥 Generate posts
   const handleGenerate = async () => {
     if (!practice && !learning && !goal) {
-      alert("Please add some input");
+      setError("Please add some input");
       return;
     }
 
+    setError("");
     setLoading(true);
     setOptions([]);
 
@@ -32,171 +29,183 @@ function GeneratePost() {
       practice,
       learning,
       goal,
+      intent,
       tone,
-      intent: intent || globalIntent, // 🔥 use global
-      useHistory,
-      history: posts,
       wordCount,
     };
 
     try {
       const results = [];
 
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < numPosts; i++) {
         const res = await generatePost(data);
-
-        if (res && res.trim() !== "") {
-          results.push(res);
-        }
+        if (res) results.push(res);
       }
 
-      setOptions(results);
-      setPractice("");
-      setLearning("");
-      setGoal("");
+      if (results.length === 0) {
+        setError("Error generating posts");
+      } else {
+        setOptions(results);
+      }
     } catch (err) {
       console.error(err);
-      alert("Error generating posts");
+      setError("Something went wrong");
     }
 
     setLoading(false);
+
+    // clear inputs
+    setPractice("");
+    setLearning("");
+    setGoal("");
+    setIntent("");
   };
 
-  const handleSelect = (content) => {
+  // 🔥 Save selected post
+  const handleSelect = (post) => {
     const newPost = {
       id: Date.now(),
-      content,
+      content: post,
       date: new Date().toISOString(),
-      tone,
-      inputs: {
-        practice,
-        learning,
-        goal,
-        intent: intent || globalIntent,
-      },
     };
 
-    setPosts((prev) => [newPost, ...prev]);
-    setOptions([]);
+    const existing =
+      JSON.parse(localStorage.getItem("posts")) || [];
+
+    const updated = [newPost, ...existing];
+
+    localStorage.setItem("posts", JSON.stringify(updated));
+
+    alert("Post saved to history!");
+  };
+
+  // 🔥 Copy
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied!");
   };
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1 mb-4">
-        <h2 className="text-3xl font-bold text-gray-800">
-          AI Post Generator
-        </h2>
-        <p className="text-gray-500">
-          Turn your coding progress into LinkedIn posts
-        </p>
-      </div>
 
-      <div className="bg-white shadow-md rounded-xl p-5 space-y-4">
+      {/* FORM */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow space-y-4">
+        <h2 className="text-lg font-semibold">Generate Post</h2>
+
+        {error && (
+          <p className="text-red-500 text-sm">{error}</p>
+        )}
+
         <input
-          placeholder="What did you build?"
           value={practice}
           onChange={(e) => setPractice(e.target.value)}
-          className="w-full border p-3 rounded-lg"
+          placeholder="What did you work on?"
+          className="w-full p-3 rounded-lg border dark:bg-gray-700"
         />
 
         <input
-          placeholder="What did you learn?"
           value={learning}
           onChange={(e) => setLearning(e.target.value)}
-          className="w-full border p-3 rounded-lg"
+          placeholder="What did you learn?"
+          className="w-full p-3 rounded-lg border dark:bg-gray-700"
         />
 
         <input
-          placeholder="Next goal?"
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          className="w-full border p-3 rounded-lg"
+          placeholder="Next goal?"
+          className="w-full p-3 rounded-lg border dark:bg-gray-700"
         />
 
-        {/* 🔥 Intent */}
         <input
-          placeholder="Optional: Describe style (e.g. Day 2, storytelling...)"
-          value={intent || globalIntent}
-          onChange={(e) => {
-            setIntent(e.target.value);
-            setGlobalIntent(e.target.value); // 🔥 persist
-          }}
-          className="w-full border p-3 rounded-lg"
+          value={intent}
+          onChange={(e) => setIntent(e.target.value)}
+          placeholder="Intent (optional)"
+          className="w-full p-3 rounded-lg border dark:bg-gray-700"
         />
 
+        {/* Tone */}
         <select
           value={tone}
           onChange={(e) => setTone(e.target.value)}
-          className="w-full border p-3 rounded-lg"
+          className="w-full p-3 rounded-lg border dark:bg-gray-700"
         >
           <option value="casual">Casual</option>
           <option value="professional">Professional</option>
           <option value="story">Story</option>
         </select>
 
-        <select
-          value={count}
-          onChange={(e) => setCount(Number(e.target.value))}
-          className="w-full border p-3 rounded-lg"
-        >
-          <option value={1}>1 Post</option>
-          <option value={2}>2 Posts</option>
-          <option value={3}>3 Posts</option>
-        </select>
-          <div className="space-y-2">
-  <label className="text-sm text-gray-600">
-    Post Length: {wordCount} words
-  </label>
-
-  <input
-    type="range"
-    min="50"
-    max="300"
-    step="10"
-    value={wordCount}
-    onChange={(e) => setWordCount(Number(e.target.value))}
-    className="w-full"
-  />
-</div> 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={useHistory}
-            onChange={() => setUseHistory(!useHistory)}
-          />
-          <label className="text-sm text-gray-600">
-            Continue from previous posts
+        {/* Number of posts */}
+        <div>
+          <label className="text-sm">
+            Number of posts:{" "}
+            <span className="font-medium">{numPosts}</span>
           </label>
+
+          <input
+            type="range"
+            min="1"
+            max="3"
+            value={numPosts}
+            onChange={(e) => setNumPosts(Number(e.target.value))}
+            className="w-full"
+          />
+        </div>
+
+        {/* Word count */}
+        <div>
+          <label className="text-sm">
+            Word Length:{" "}
+            <span className="font-medium">{wordCount}</span>
+          </label>
+
+          <input
+            type="range"
+            min="50"
+            max="300"
+            value={wordCount}
+            onChange={(e) => setWordCount(Number(e.target.value))}
+            className="w-full"
+          />
         </div>
 
         <button
           onClick={handleGenerate}
-          disabled={loading}
-          className="bg-blue-600 text-white px-5 py-2.5 rounded-lg w-full"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:scale-105 transition"
         >
           {loading ? "Generating..." : "Generate Post"}
         </button>
       </div>
 
-      {options.length > 0 && (
-        <div className="space-y-4">
-          {options.map((post, index) => (
-            <div
-              key={index}
-              className="bg-white shadow-md rounded-xl p-5"
-            >
-              <p className="whitespace-pre-line">{post}</p>
+      {/* OUTPUT */}
+      <div className="space-y-4">
+        {options.map((post, i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition"
+          >
+            <p className="whitespace-pre-line text-sm leading-relaxed">
+              {post}
+            </p>
 
+            <div className="flex gap-4 mt-4">
               <button
                 onClick={() => handleSelect(post)}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg mt-3"
+                className="text-green-600 text-sm"
               >
                 Select
               </button>
+
+              <button
+                onClick={() => handleCopy(post)}
+                className="text-blue-600 text-sm"
+              >
+                Copy
+              </button>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
